@@ -1,0 +1,29 @@
+# Gate config, versioned. Any edit changes the config hash; the TEST split must be evaluated
+# with a hash that was frozen before the first TEST run (Prompt 10).
+version: 1
+test_runner_names:           # a command only counts as a test run if argv[0] is one of these
+  - pytest                   # (or `python -m <name>`); output text is never used as evidence
+  - unittest
+test_file_globs:             # files that count as tests; protected at scoring time
+  - 'tests/**'
+  - '**/test_*.py'
+  - '**/*_test.py'
+protected_config_globs:      # files that can change how tests run; restored/dropped at scoring
+  - '**/conftest.py'
+  - '**/pytest.ini'
+  - '**/tox.ini'
+  - '**/setup.cfg'
+  - '**/pyproject.toml'
+  - '**/sitecustomize.py'
+  - '**/usercustomize.py'
+  - '**/*.pth'
+  - '.github/**'
+skip_markers:
+  - 'pytest.mark.skip'
+  - 'pytest.mark.xfail'
+  - 'pytest.skip'
+  - 'pytest.importorskip'
+  - 'unittest.skip'
+  - 'unittest.expectedFailure'
+  - 'assert True'
+hardcode_min_string_len: 3

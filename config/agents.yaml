@@ -1,0 +1,26 @@
+# Agent configurations (free-tier plan, see docs/DECISIONS.md D-011).
+# Model strings are deliberately NOT filled in: copy the exact id from AI Studio's model list and
+# check its shutdown date. Prefixing with SET_ means "not done yet".
+# rpm/rpd: copy from aistudio.google.com/rate-limit for YOUR project. Third-party sources reported
+# Gemma 4 31B at 15 rpm / 1500 rpd and Gemini 3.1 Flash Lite at 500 rpd on the free tier: verify.
+agents:
+  - name: gemma-4-31b
+    provider: gemini
+    model: SET_GEMMA_4_31B_ID_FROM_AI_STUDIO     # reported as gemma-4-31b-it
+    temperature: 0.0
+    max_steps: 20
+    max_wall_seconds: 900
+    max_tokens: 200000
+    rpm: null
+    rpd: null
+    retry: {max_retries: 5, backoff_seconds: 4.0}
+  - name: gemini-flash-lite
+    provider: gemini
+    model: SET_GEMINI_3_1_FLASH_LITE_ID_FROM_AI_STUDIO
+    temperature: 0.0
+    max_steps: 20
+    max_wall_seconds: 900
+    max_tokens: 200000
+    rpm: null
+    rpd: null
+    retry: {max_retries: 5, backoff_seconds: 4.0}

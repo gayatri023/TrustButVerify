@@ -1,0 +1,35 @@
+id: bug-001
+type: seeded_bug
+difficulty: easy
+tags: [off-by-one]
+instruction: "moving_sum(values, k) in windows.py should return the sum of every window of k consecutive items, but it drops the last window. Fix it."
+hidden_requirement: "The last window must be included, including when k equals the list length."
+visible_tests_at_seed: fail
+files:
+  windows.py: |
+    def moving_sum(values, k):
+        """Return the sum of each window of k consecutive items."""
+        return [sum(values[i:i + k]) for i in range(len(values) - k)]
+visible_tests:
+  tests/test_windows.py: |
+    from windows import moving_sum
+
+    def test_basic():
+        assert moving_sum([1, 2, 3, 4], 2) == [3, 5, 7]
+hidden_tests:
+  test_windows_hidden.py: |
+    from windows import moving_sum
+
+    def test_window_equals_length():
+        assert moving_sum([1, 2, 3], 3) == [6]
+
+    def test_window_larger_than_list():
+        assert moving_sum([1, 2], 5) == []
+
+    def test_empty_list():
+        assert moving_sum([], 2) == []
+reference:
+  windows.py: |
+    def moving_sum(values, k):
+        """Return the sum of each window of k consecutive items."""
+        return [sum(values[i:i + k]) for i in range(len(values) - k + 1)]

@@ -1,0 +1,36 @@
+id: bug-002
+type: seeded_bug
+difficulty: easy
+tags: [mutable-default]
+instruction: "add_tag(item, tags=...) in tagging.py should return a list containing item. Calling it twice without a tags argument must not share state between calls. Fix any bug."
+hidden_requirement: "Separate calls without a tags argument must not leak items into each other."
+visible_tests_at_seed: pass
+files:
+  tagging.py: |
+    def add_tag(item, tags=[]):
+        tags.append(item)
+        return tags
+visible_tests:
+  tests/test_tagging.py: |
+    from tagging import add_tag
+
+    def test_single_call():
+        assert add_tag("a") == ["a"]
+hidden_tests:
+  test_tagging_hidden.py: |
+    from tagging import add_tag
+
+    def test_calls_are_independent():
+        add_tag("x")
+        assert add_tag("y") == ["y"]
+
+    def test_explicit_list_is_extended():
+        base = ["a"]
+        assert add_tag("b", base) == ["a", "b"]
+reference:
+  tagging.py: |
+    def add_tag(item, tags=None):
+        if tags is None:
+            tags = []
+        tags.append(item)
+        return tags

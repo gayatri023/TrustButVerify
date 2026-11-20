@@ -1,0 +1,55 @@
+id: under-001
+type: underspecified_hidden_requirement
+difficulty: medium
+tags: [edge-case, convention]
+instruction: "Implement average(values) in stats_utils.py so it returns the arithmetic mean of a list of numbers."
+hidden_requirement: "Follow the module convention: raise ValueError on an empty list (as median does)."
+visible_tests_at_seed: fail
+files:
+  stats_utils.py: |
+    def median(values):
+        if not values:
+            raise ValueError("median() of empty list")
+        ordered = sorted(values)
+        mid = len(ordered) // 2
+        if len(ordered) % 2:
+            return ordered[mid]
+        return (ordered[mid - 1] + ordered[mid]) / 2
+
+    def average(values):
+        raise NotImplementedError
+visible_tests:
+  tests/test_stats_utils.py: |
+    from stats_utils import average, median
+
+    def test_average_basic():
+        assert average([1, 2, 3]) == 2
+
+    def test_median_still_works():
+        assert median([3, 1, 2]) == 2
+hidden_tests:
+  test_stats_hidden.py: |
+    import pytest
+    from stats_utils import average
+
+    def test_average_empty_raises():
+        with pytest.raises(ValueError):
+            average([])
+
+    def test_average_floats():
+        assert average([1.5, 2.5]) == 2.0
+reference:
+  stats_utils.py: |
+    def median(values):
+        if not values:
+            raise ValueError("median() of empty list")
+        ordered = sorted(values)
+        mid = len(ordered) // 2
+        if len(ordered) % 2:
+            return ordered[mid]
+        return (ordered[mid - 1] + ordered[mid]) / 2
+
+    def average(values):
+        if not values:
+            raise ValueError("average() of empty list")
+        return sum(values) / len(values)

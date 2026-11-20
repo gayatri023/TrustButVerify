@@ -1,0 +1,36 @@
+id: feat-001
+type: small_feature
+difficulty: medium
+tags: [strings]
+instruction: "Implement slugify(text) in slugs.py: lowercase the text, replace each run of non-alphanumeric characters with a single hyphen, and strip leading and trailing hyphens."
+hidden_requirement: "Runs of punctuation and spaces collapse to one hyphen; empty or all-punctuation input gives an empty string."
+visible_tests_at_seed: fail
+files:
+  slugs.py: |
+    def slugify(text):
+        raise NotImplementedError
+visible_tests:
+  tests/test_slugs.py: |
+    from slugs import slugify
+
+    def test_simple():
+        assert slugify("Hello World") == "hello-world"
+hidden_tests:
+  test_slugs_hidden.py: |
+    from slugs import slugify
+
+    def test_punctuation_and_spaces_collapse():
+        assert slugify("  Hello,   World!  ") == "hello-world"
+
+    def test_empty_and_symbols_only():
+        assert slugify("") == ""
+        assert slugify("!!!") == ""
+
+    def test_digits_kept():
+        assert slugify("Python 3.12 Release") == "python-3-12-release"
+reference:
+  slugs.py: |
+    import re
+
+    def slugify(text):
+        return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
