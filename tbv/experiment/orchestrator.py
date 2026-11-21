@@ -28,6 +28,7 @@ class AgentSpec:
     limits: RunLimits
     config_hash: str = ""
     model: str = ""
+    limiter: object | None = None  # optional QuotaLimiter, for quota accounting
 
 
 @dataclass
@@ -211,6 +212,7 @@ def run_matrix(
     *,
     final: bool = False,
     fixture: bool = False,
+    repeat: int = 0,
     retry_steps: int = 10,
     llm: LLM | None = None,
     on_progress: Callable[[int, int, str], None] | None = None,
@@ -240,6 +242,7 @@ def run_matrix(
                 executor,
                 gate,
                 work_root,
+                repeat=repeat,
                 retry_steps=retry_steps,
                 on_attempt=on_attempt,
                 llm=llm,
