@@ -16,3 +16,14 @@ jobs:
       - run: make setup
       - run: make lint
       - run: make test
+
+  # Real evidence for the sandbox: GitHub-hosted runners have a Docker daemon.
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: make setup
+      - run: docker version
+      - run: make docker-tests
