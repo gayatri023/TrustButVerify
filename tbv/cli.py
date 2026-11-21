@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import sys
 from collections import Counter
 from pathlib import Path
@@ -15,6 +16,7 @@ from tbv import __version__
 from tbv.core.config import REPO_ROOT, Settings, load_agents, load_gate, load_pricing
 from tbv.core.models import ExitCode, Split
 from tbv.core.prereg import prereg_status
+from tbv.experiment.orchestrator import Summary
 from tbv.sandbox.base import Executor
 from tbv.sandbox.preflight import check_docker
 
@@ -183,14 +185,60 @@ def run(
     agent: Annotated[str, typer.Option(help="Agent name from config/agents.yaml.")],
     task: Annotated[str, typer.Option(help="Task id (directory name under suite/tasks).")],
     repeat: Annotated[int, typer.Option(min=0, help="Repeat index.")] = 0,
+    tasks_dir: Annotated[Path, typer.Option(exists=True, file_okay=False)] = DEFAULT_TASKS_DIR,
+    db: Annotated[Path, typer.Option()] = DEFAULT_DB,
+    executor: ExecutorOpt = "docker",
 ) -> None:
-    """Run one agent on one task inside the sandbox and save the transcript."""
-    names = [a.name for a in load_agents().agents]
-    if agent not in names:
+    """Run one agent on one task (live model) and store the result. Needs Docker and a key."""
+    from tbv.experiment.store import Store
+    from tbv.live import Matrix, make_spec, run_experiment
+    from tbv.suite.task import load_tasks
+
+    cfgs = {a.name: a for a in load_agents().agents}
+    if agent not in cfgs:
         raise typer.BadParameter(
-            f"unknown agent {agent!r}; known: {', '.join(names)}", param_hint="--agent"
+            f"unknown agent {agent!r}; known: {', '.join(cfgs)}", param_hint="--agent"
         )
-    _not_implemented("the live-model wiring step (needs Docker and a Gemini key)")
+    tasks = [t for t in load_tasks(tasks_dir) if t.spec.id == task]
+    if not tasks:
+        raise typer.BadParameter(f"no task {task!r} in {tasks_dir}", param_hint="--task")
+    store = Store(db)
+    try:
+        spec = make_spec(cfgs[agent], Settings.from_env(), store)
+    except RuntimeError as exc:
+        err.print(f"[red]{exc}[/]")
+        raise typer.Exit(ExitCode.USAGE) from exc
+    summary = run_experiment(
+        store,
+        [spec],
+        tasks,
+        {},
+        Matrix(agents=[agent], repeats=repeat + 1),
+        _executor(executor),
+        load_gate(),
+        db.parent / "work",
+    )
+    _print_summary(summary)
+    for r in store.con.execute(
+        "SELECT attempt, status, gate_overall, completed_correctly, steps "
+        "FROM runs WHERE agent=? AND task=? ORDER BY attempt",
+        (agent, task),
+    ):
+        out.print(
+            f"  attempt {r['attempt']}: status={r['status']} gate={r['gate_overall']} "
+            f"hidden+visible tests pass={bool(r['completed_correctly'])} steps={r['steps']}"
+        )
+
+
+def _print_summary(summary: Summary) -> None:
+    out.print(f"ran {summary.ran} cells, skipped {summary.skipped} already done")
+    if summary.paused_until:
+        utc = dt.datetime.fromtimestamp(summary.paused_until, dt.UTC)
+        ist = utc.astimezone(dt.timezone(dt.timedelta(hours=5, minutes=30)))
+        out.print(
+            f"[yellow]Daily quota used up. Re-run the same command after {utc:%H:%M} UTC "
+            f"({ist:%H:%M} IST); finished cells are skipped automatically.[/]"
+        )
 
 
 @app.command("verify")
@@ -249,14 +297,19 @@ def verify(
 @app.command("experiment")
 def experiment(
     matrix: Annotated[
-        Path, typer.Option(exists=True, dir_okay=False, help="Agents x tasks matrix file.")
+        Path,
+        typer.Option(exists=True, dir_okay=False, help="Matrix YAML (agents, split, repeats)."),
     ],
     dry_run: Annotated[
-        bool, typer.Option("--dry-run", help="Run 5 tasks, print projected cost and time.")
+        bool, typer.Option("--dry-run", help="Run 5 tasks, print projected requests and time.")
     ] = False,
     final: Annotated[
         bool, typer.Option("--final", help="Evaluate the TEST split once with the frozen config.")
     ] = False,
+    tasks_dir: Annotated[Path, typer.Option(exists=True, file_okay=False)] = DEFAULT_TASKS_DIR,
+    splits_file: Annotated[Path, typer.Option()] = REPO_ROOT / "suite" / "splits.yaml",
+    db: Annotated[Path, typer.Option()] = DEFAULT_DB,
+    executor: ExecutorOpt = "docker",
 ) -> None:
     """Run the experiment matrix (resumable). Real runs need docs/PREREG.md to be FROZEN."""
     if not dry_run and prereg_status() != "FROZEN":
@@ -264,7 +317,75 @@ def experiment(
         raise typer.Exit(ExitCode.USAGE)
     if final and dry_run:
         raise typer.BadParameter("--final cannot be combined with --dry-run", param_hint="--final")
-    _not_implemented("the live-model wiring step (needs Docker and a Gemini key)")
+    from tbv.experiment.store import Store, TestSplitGuard
+    from tbv.live import dry_run as live_dry_run
+    from tbv.live import load_matrix, make_spec, run_experiment, select_tasks
+    from tbv.suite.splits import load_splits
+    from tbv.suite.task import load_tasks
+
+    mx = load_matrix(matrix)
+    cfgs = {a.name: a for a in load_agents().agents}
+    unknown = [a for a in mx.agents if a not in cfgs]
+    if unknown:
+        raise typer.BadParameter(f"unknown agents: {unknown}", param_hint="--matrix")
+    tasks = load_tasks(tasks_dir)
+    splits = load_splits(splits_file) if splits_file.exists() else {}
+    store = Store(":memory:" if dry_run else db)
+    try:
+        specs = [make_spec(cfgs[a], Settings.from_env(), store) for a in mx.agents]
+    except RuntimeError as exc:
+        err.print(f"[red]{exc}[/]")
+        raise typer.Exit(ExitCode.USAGE) from exc
+    ex, gate = _executor(executor), load_gate()
+    if dry_run:
+        n = len(select_tasks(mx, tasks, splits)) * len(specs) * mx.repeats
+        cfg = cfgs[mx.agents[0]]
+        p = live_dry_run(specs, tasks, splits, mx, ex, gate, n, cfg.rpd or 1, cfg.tpm)
+        out.print(
+            f"Projection for {n} runs: about {p.requests:.0f} requests "
+            f"({p.days_at_rpd:.0f} day(s) at {cfg.rpd}/day)"
+            + (
+                f", about {p.minutes_at_tpm / 60:.1f} h of token budget at {cfg.tpm} TPM"
+                if p.minutes_at_tpm
+                else ""
+            )
+            + f"; {100 * p.retry_fraction:.0f}% of sampled runs retried."
+        )
+        return
+    try:
+        summary = run_experiment(
+            store,
+            specs,
+            tasks,
+            splits,
+            mx,
+            ex,
+            gate,
+            db.parent / "work",
+            final=final,
+            on_progress=lambda i, n, m: out.print(f"  [{i}/{n}] {m}"),
+        )
+    except TestSplitGuard as exc:
+        err.print(f"[red]{exc}[/]")
+        raise typer.Exit(ExitCode.USAGE) from exc
+    _print_summary(summary)
+
+
+@app.command("models")
+def models(
+    contains: Annotated[str, typer.Option(help="Only show ids containing this text.")] = "",
+) -> None:
+    """List model ids your API key can call (copy exact ids into config/agents.yaml)."""
+    key = Settings.from_env().gemini_api_key
+    if not key:
+        err.print("[red]GEMINI_API_KEY is not set (Codespaces secret or .env).[/]")
+        raise typer.Exit(ExitCode.USAGE)
+    from google import genai
+
+    for m in genai.Client(api_key=key).models.list():
+        name = (m.name or "").removeprefix("models/")
+        if "generateContent" in (m.supported_actions or []) and contains.lower() in name.lower():
+            out.print(name)
 
 
 @app.command("analyze")
