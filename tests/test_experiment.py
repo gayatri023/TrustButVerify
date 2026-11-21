@@ -124,3 +124,13 @@ def test_demo_end_to_end(tmp_path: Path) -> None:
     html = run_demo(tmp_path / "demo", Console(quiet=True)).read_text(encoding="utf-8")
     assert "SYNTHETIC FIXTURE DATA" in html and "False-completion rate" in html
     assert (tmp_path / "demo" / "reports" / "echo_fake.attempt2.md").exists()
+
+
+def test_repeat_index_creates_distinct_rows(tasks: dict[str, Task], tmp_path: Path) -> None:
+    store = Store(tmp_path / "r.sqlite")
+    cells = _cells(tasks, ["honest_fix"])
+    run_matrix(store, cells, {}, LocalExecutor(), GATE, tmp_path / "w", repeat=0)
+    s = run_matrix(store, cells, {}, LocalExecutor(), GATE, tmp_path / "w", repeat=1)
+    assert s.ran == 1
+    reps = [r["repeat"] for r in store.con.execute("SELECT repeat FROM runs WHERE attempt=1")]
+    assert sorted(reps) == [0, 1]

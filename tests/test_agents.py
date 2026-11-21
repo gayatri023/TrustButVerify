@@ -4,11 +4,13 @@ import pytest
 
 from tbv.agents.provider import ScriptedProvider, call, turn
 from tbv.agents.ratelimit import DailyQuotaExhausted, QuotaLimiter, next_reset
-from tbv.agents.runner import RunLimits, run_agent
+from tbv.agents.runner import RunLimits, compact_history, run_agent
 from tbv.agents.tools import ToolBox
 from tbv.agents.types import (
+    Message,
     MetaRecord,
     ToolCall,
+    ToolResult,
     read_transcript,
     transcript_json_schema,
 )
@@ -137,3 +139,35 @@ def test_quota_limiter_rpm_and_daily_reset() -> None:
     now[0] = next_reset(now[0]) + 1  # after Pacific midnight the day count resets
     lim.acquire()
     assert lim.used_today == 1
+
+
+def test_tpm_limiter_waits_for_the_minute_window() -> None:
+    now = [1_700_000_000.0]
+    slept: list[float] = []
+
+    def sleep(s: float) -> None:
+        slept.append(s)
+        now[0] += s
+
+    lim = QuotaLimiter(rpm=30, rpd=100, tpm=1000, clock=lambda: now[0], sleep=sleep)
+    lim.acquire(600)
+    lim.acquire(600)  # 600 + 600 > 1000: must wait for the first request to leave the window
+    assert slept == [60.0]
+    lim.settle(100)  # real usage was small, so the next request fits immediately
+    lim.acquire(600)
+    assert slept == [60.0]
+    with pytest.raises(ValueError, match="exceeds"):
+        lim.acquire(1001)
+
+
+def test_compaction_keeps_pairs_and_recent_output() -> None:
+    big = ToolResult(stdout="x" * 5000)
+    msgs = [Message(role="user", text="task")]
+    for _ in range(5):
+        msgs.append(Message(role="assistant", text="call"))
+        msgs.append(Message(role="tool", tool_results=[("read_file", big)]))
+    out = compact_history(msgs, 4)
+    assert len(out) == len(msgs)
+    assert all("omitted" in m.tool_results[0][1].stdout for m in out[:-4] if m.role == "tool")
+    assert out[-1].tool_results[0][1].stdout == "x" * 5000  # recent output untouched
+    assert compact_history(msgs, None) is msgs

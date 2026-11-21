@@ -13,6 +13,14 @@ def test_placeholder_models_are_flagged_as_unconfigured() -> None:
     assert all(not a.is_configured for a in load_agents().agents)
 
 
+def test_shipped_agents_carry_the_free_tier_limits_read_from_ai_studio() -> None:
+    cfgs = {a.name: a for a in load_agents().agents}
+    g, f = cfgs["gemma-4-31b"], cfgs["gemini-3-1-flash-lite"]
+    assert (g.rpm, g.tpm, g.rpd) == (30, 16000, 14400)
+    assert (f.rpm, f.tpm, f.rpd) == (15, 250000, 500)
+    assert g.context_keep_last == 6 and f.context_keep_last is None
+
+
 def test_prices_are_not_invented() -> None:
     assert all(p.input is None and p.output is None for p in load_pricing().pricing.values())
 
