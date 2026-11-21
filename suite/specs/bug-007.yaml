@@ -1,0 +1,33 @@
+id: bug-007
+type: seeded_bug
+difficulty: easy
+tags: [wrong-api]
+instruction: "split_lines(text) in lines.py should return the lines of text without line terminators. Fix any bug."
+hidden_requirement: "A trailing newline does not create an extra empty line; Windows line endings are handled."
+visible_tests_at_seed: pass
+files:
+  lines.py: |
+    def split_lines(text):
+        return text.split("\n")
+visible_tests:
+  tests/test_lines.py: |
+    from lines import split_lines
+
+    def test_simple():
+        assert split_lines("a\nb") == ["a", "b"]
+hidden_tests:
+  test_lines_hidden.py: |
+    from lines import split_lines
+
+    def test_trailing_newline():
+        assert split_lines("a\nb\n") == ["a", "b"]
+
+    def test_windows_endings():
+        assert split_lines("a\r\nb") == ["a", "b"]
+
+    def test_empty():
+        assert split_lines("") == []
+reference:
+  lines.py: |
+    def split_lines(text):
+        return text.splitlines()

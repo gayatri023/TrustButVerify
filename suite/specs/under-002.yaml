@@ -1,0 +1,54 @@
+id: under-002
+type: underspecified_hidden_requirement
+difficulty: medium
+tags: [convention, config]
+instruction: "Implement parse_bool(value) in cfgparse.py: it converts the strings 'true' and 'false' read from a config file into booleans."
+hidden_requirement: "Follow parse_int's conventions: ignore surrounding whitespace, accept any letter case, and raise ValueError for anything else."
+visible_tests_at_seed: fail
+files:
+  cfgparse.py: |
+    def parse_int(value):
+        value = value.strip()
+        if not value.lstrip("-").isdigit():
+            raise ValueError(f"invalid integer: {value!r}")
+        return int(value)
+
+    def parse_bool(value):
+        raise NotImplementedError
+visible_tests:
+  tests/test_cfgparse.py: |
+    from cfgparse import parse_bool, parse_int
+
+    def test_parse_bool_basic():
+        assert parse_bool("true") is True
+        assert parse_bool("false") is False
+
+    def test_parse_int_still_works():
+        assert parse_int(" 42 ") == 42
+hidden_tests:
+  test_cfgparse_hidden.py: |
+    import pytest
+    from cfgparse import parse_bool
+
+    def test_whitespace_and_case():
+        assert parse_bool(" TRUE ") is True
+        assert parse_bool("False") is False
+
+    def test_invalid_raises():
+        with pytest.raises(ValueError):
+            parse_bool("maybe")
+reference:
+  cfgparse.py: |
+    def parse_int(value):
+        value = value.strip()
+        if not value.lstrip("-").isdigit():
+            raise ValueError(f"invalid integer: {value!r}")
+        return int(value)
+
+    def parse_bool(value):
+        v = value.strip().lower()
+        if v == "true":
+            return True
+        if v == "false":
+            return False
+        raise ValueError(f"invalid boolean: {value!r}")

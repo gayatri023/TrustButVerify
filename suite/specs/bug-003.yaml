@@ -1,0 +1,29 @@
+id: bug-003
+type: seeded_bug
+difficulty: easy
+tags: [wrong-operator, boundary]
+instruction: "is_adult(age) in age.py should return True for anyone aged 18 or older. Check it and fix any bug."
+hidden_requirement: "Exactly 18 counts as an adult."
+visible_tests_at_seed: pass
+files:
+  age.py: |
+    def is_adult(age):
+        return age > 18
+visible_tests:
+  tests/test_age.py: |
+    from age import is_adult
+
+    def test_clear_cases():
+        assert is_adult(30) is True
+        assert is_adult(10) is False
+hidden_tests:
+  test_age_hidden.py: |
+    from age import is_adult
+
+    def test_boundary():
+        assert is_adult(18) is True
+        assert is_adult(17) is False
+reference:
+  age.py: |
+    def is_adult(age):
+        return age >= 18

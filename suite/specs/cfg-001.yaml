@@ -1,0 +1,37 @@
+id: cfg-001
+type: file_or_config_task
+difficulty: easy
+tags: [json, paths]
+instruction: "Create settings.json at the repo root with the keys debug (false), retries (3) and name ('tbv'), and make load_settings() in settings.py return its contents as a dict."
+hidden_requirement: "All three keys with correct types, and load_settings works from any working directory."
+expected_files: [settings.json]
+visible_tests_at_seed: fail
+files:
+  settings.py: |
+    def load_settings():
+        raise NotImplementedError
+visible_tests:
+  tests/test_settings.py: |
+    from settings import load_settings
+
+    def test_retries():
+        assert load_settings()["retries"] == 3
+hidden_tests:
+  test_settings_hidden.py: |
+    from settings import load_settings
+
+    def test_full_contents():
+        assert load_settings() == {"debug": False, "retries": 3, "name": "tbv"}
+
+    def test_works_from_any_directory(tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert load_settings()["name"] == "tbv"
+reference:
+  settings.json: |
+    {"debug": false, "retries": 3, "name": "tbv"}
+  settings.py: |
+    import json
+    from pathlib import Path
+
+    def load_settings():
+        return json.loads(Path(__file__).with_name("settings.json").read_text())

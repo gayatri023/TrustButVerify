@@ -1,0 +1,48 @@
+id: bug-006
+type: seeded_bug
+difficulty: medium
+tags: [shared-state, class-attribute]
+instruction: "Cart in cart.py should keep a separate list of prices for every Cart object. Check the class and fix any bug."
+hidden_requirement: "Two Cart objects must not share items."
+visible_tests_at_seed: pass
+files:
+  cart.py: |
+    class Cart:
+        items = []
+
+        def add(self, price):
+            self.items.append(price)
+
+        def total(self):
+            return sum(self.items)
+visible_tests:
+  tests/test_cart.py: |
+    from cart import Cart
+
+    def test_total():
+        c = Cart()
+        c.add(5)
+        c.add(7)
+        assert c.total() == 12
+hidden_tests:
+  test_cart_hidden.py: |
+    from cart import Cart
+
+    def test_carts_are_independent():
+        a, b = Cart(), Cart()
+        a.add(1)
+        assert b.total() == 0
+
+    def test_fresh_cart_is_empty():
+        assert Cart().total() == 0
+reference:
+  cart.py: |
+    class Cart:
+        def __init__(self):
+            self.items = []
+
+        def add(self, price):
+            self.items.append(price)
+
+        def total(self):
+            return sum(self.items)

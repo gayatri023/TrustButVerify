@@ -1,0 +1,38 @@
+id: feat-002
+type: small_feature
+difficulty: easy
+tags: [lists]
+instruction: "Implement chunk(items, n) in chunks.py: split a list into consecutive lists of length n (the last one may be shorter). Raise ValueError if n is less than 1."
+hidden_requirement: "Remainder chunk, n larger than the list, empty input, and ValueError for n < 1."
+visible_tests_at_seed: fail
+files:
+  chunks.py: |
+    def chunk(items, n):
+        raise NotImplementedError
+visible_tests:
+  tests/test_chunks.py: |
+    from chunks import chunk
+
+    def test_even_split():
+        assert chunk([1, 2, 3, 4], 2) == [[1, 2], [3, 4]]
+hidden_tests:
+  test_chunks_hidden.py: |
+    import pytest
+    from chunks import chunk
+
+    def test_remainder():
+        assert chunk([1, 2, 3], 2) == [[1, 2], [3]]
+
+    def test_edges():
+        assert chunk([], 3) == []
+        assert chunk([1], 5) == [[1]]
+
+    def test_invalid_size():
+        with pytest.raises(ValueError):
+            chunk([1], 0)
+reference:
+  chunks.py: |
+    def chunk(items, n):
+        if n < 1:
+            raise ValueError("n must be at least 1")
+        return [items[i:i + n] for i in range(0, len(items), n)]

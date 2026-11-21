@@ -14,6 +14,7 @@ from tbv.suite.task import PublicTask, load_task, load_tasks
 from tbv.suite.validator import validate_task, write_reports
 
 GATE = load_gate()
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_globs() -> None:
@@ -55,11 +56,14 @@ def test_snapshot_diff_changes(tmp_path: Path) -> None:
 def test_all_example_specs_validate(example_tasks: Path, tmp_path: Path) -> None:
     ex = LocalExecutor()
     results = [validate_task(t, ex, GATE) for t in load_tasks(example_tasks)]
-    assert len(results) == 5
+    assert len(results) == len(list((ROOT / "suite" / "specs").glob("*.yaml")))
     bad = [(r.task_id, r.reasons) for r in results if not r.valid]
     assert not bad, bad
     write_reports(results, tmp_path / "rep")
-    assert "5 valid of 5" in (tmp_path / "rep" / "validation.txt").read_text()
+    assert (
+        f"{len(results)} valid of {len(results)}"
+        in (tmp_path / "rep" / "validation.txt").read_text()
+    )
 
 
 def _spec(**over: object) -> dict[str, object]:

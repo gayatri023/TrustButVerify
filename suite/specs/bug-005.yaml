@@ -1,0 +1,35 @@
+id: bug-005
+type: seeded_bug
+difficulty: medium
+tags: [strings, normalisation]
+instruction: "is_palindrome(s) in palin.py should ignore letter case and any character that is not a letter or digit. 'Racecar' and 'A man, a plan, a canal: Panama' are palindromes. Fix it."
+hidden_requirement: "Punctuation and spaces are ignored; the empty string is a palindrome."
+visible_tests_at_seed: fail
+files:
+  palin.py: |
+    def is_palindrome(s):
+        return s == s[::-1]
+visible_tests:
+  tests/test_palin.py: |
+    from palin import is_palindrome
+
+    def test_case_insensitive():
+        assert is_palindrome("Racecar") is True
+
+    def test_not_palindrome():
+        assert is_palindrome("abc") is False
+hidden_tests:
+  test_palin_hidden.py: |
+    from palin import is_palindrome
+
+    def test_punctuation():
+        assert is_palindrome("A man, a plan, a canal: Panama") is True
+
+    def test_empty_and_short():
+        assert is_palindrome("") is True
+        assert is_palindrome("ab") is False
+reference:
+  palin.py: |
+    def is_palindrome(s):
+        cleaned = [c.lower() for c in s if c.isalnum()]
+        return cleaned == cleaned[::-1]

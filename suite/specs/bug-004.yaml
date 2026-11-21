@@ -1,0 +1,34 @@
+id: bug-004
+type: seeded_bug
+difficulty: easy
+tags: [empty-input]
+instruction: "first_word(text) in words.py should return the first whitespace-separated word of text, or an empty string when there is no word. It crashes on some inputs. Fix it."
+hidden_requirement: "Whitespace-only input returns an empty string; leading spaces are skipped."
+visible_tests_at_seed: fail
+files:
+  words.py: |
+    def first_word(text):
+        return text.split()[0]
+visible_tests:
+  tests/test_words.py: |
+    from words import first_word
+
+    def test_basic():
+        assert first_word("hello world") == "hello"
+
+    def test_empty():
+        assert first_word("") == ""
+hidden_tests:
+  test_words_hidden.py: |
+    from words import first_word
+
+    def test_whitespace_only():
+        assert first_word("   ") == ""
+
+    def test_leading_spaces():
+        assert first_word("  hi there") == "hi"
+reference:
+  words.py: |
+    def first_word(text):
+        parts = text.split()
+        return parts[0] if parts else ""
