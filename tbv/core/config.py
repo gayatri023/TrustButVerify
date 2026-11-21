@@ -35,6 +35,9 @@ class AgentConfig(_Strict):
     max_tokens: int = Field(gt=0)
     rpm: int | None = None  # free-tier requests per minute (copy from AI Studio's rate-limit page)
     rpd: int | None = None  # free-tier requests per Pacific day
+    tpm: int | None = None  # free-tier input tokens per minute
+    context_keep_last: int | None = None  # keep full tool output only for the last N messages
+    max_tool_chars: int = 8000  # clip each tool output shown to the model
     retry: RetryPolicy
 
     @property
