@@ -58,7 +58,14 @@ TOOL_SPECS: list[dict[str, Any]] = [
 
 
 class ToolBox:
-    def __init__(self, root: Path, executor: Executor, command_timeout: float = 60) -> None:
+    def __init__(
+        self,
+        root: Path,
+        executor: Executor,
+        command_timeout: float = 60,
+        max_chars: int = MAX_READ_CHARS,
+    ) -> None:
+        self.max_chars = max_chars
         self.root = root.resolve()
         self.executor = executor
         self.command_timeout = command_timeout
@@ -90,7 +97,7 @@ class ToolBox:
             if p is None or not p.is_file():
                 return ToolResult(ok=False, stderr="no such file inside the repository")
             text = p.read_text(encoding="utf-8", errors="replace")
-            return ToolResult(stdout=text[:MAX_READ_CHARS], truncated=len(text) > MAX_READ_CHARS)
+            return ToolResult(stdout=text[: self.max_chars], truncated=len(text) > self.max_chars)
         if call.name == "write_file":
             p = self._safe(str(a.get("path", "")))
             if p is None or p == self.root:
@@ -102,8 +109,8 @@ class ToolBox:
             res = self.executor.run(self.root, str(a.get("cmd", "")), timeout=self.command_timeout)
             return ToolResult(
                 ok=res.exit_code == 0,
-                stdout=res.stdout,
-                stderr=res.stderr,
+                stdout=res.stdout[-self.max_chars :],
+                stderr=res.stderr[-self.max_chars :],
                 exit_code=res.exit_code,
                 truncated=res.truncated,
             )

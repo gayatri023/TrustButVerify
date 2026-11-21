@@ -30,6 +30,7 @@ class GeminiProvider:
         self.model = cfg.model
         self._cfg = cfg
         self._limiter = limiter
+        self._last_in = 0
         self._client = genai.Client(api_key=api_key)
         decls = [
             types.FunctionDeclaration(
@@ -80,7 +81,7 @@ class GeminiProvider:
         attempts = self._cfg.retry.max_retries + 1
         for i in range(attempts):
             if self._limiter:
-                self._limiter.acquire()
+                self._limiter.acquire((self._last_in + 800) if self._last_in else 3000)
             try:
                 resp = self._client.models.generate_content(
                     model=self.model, contents=self._contents(history), config=self._config
@@ -103,6 +104,9 @@ class GeminiProvider:
                 text += p.text
         u = resp.usage_metadata
         t_in = int(getattr(u, "prompt_token_count", 0) or 0) if u else 0
+        self._last_in = t_in
+        if self._limiter and t_in:
+            self._limiter.settle(t_in)
         t_out = (
             int(getattr(u, "response_token_count", 0) or 0)
             + int(getattr(u, "thoughts_token_count", 0) or 0)

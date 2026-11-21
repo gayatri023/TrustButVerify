@@ -29,6 +29,8 @@ class RunLimits:
     max_wall_seconds: float = 900
     max_tokens: int = 200_000
     command_timeout: float = 60
+    context_keep_last: int | None = None  # compact tool output older than the last N messages
+    max_tool_chars: int = 20_000
 
 
 @dataclass
@@ -42,6 +44,20 @@ class RunResult:
     history: list[Message] = field(default_factory=list)
     workspace_hash: str = ""
     error: str | None = None
+
+
+def compact_history(msgs: list[Message], keep_last: int | None) -> list[Message]:
+    """Model-visible history: old tool outputs become stubs (keeps call/response pairing intact)."""
+    if keep_last is None or len(msgs) <= keep_last:
+        return msgs
+    stub = ToolResult(ok=True, stdout="[earlier output omitted to save context]")
+    out: list[Message] = []
+    for i, m in enumerate(msgs):
+        if m.role == "tool" and i < len(msgs) - keep_last:
+            out.append(Message(role="tool", tool_results=[(n, stub) for n, _ in m.tool_results]))
+        else:
+            out.append(m)
+    return out
 
 
 def run_agent(
@@ -61,7 +77,7 @@ def run_agent(
     msgs = list(history) if history else [Message(role="user", text=public.instruction)]
     if followup:
         msgs.append(Message(role="user", text=followup))
-    toolbox = ToolBox(workspace, executor, limits.command_timeout)
+    toolbox = ToolBox(workspace, executor, limits.command_timeout, limits.max_tool_chars)
     t_in = t_out = turns = step_no = 0
     status, final_msg, error = RunStatus.BUDGET_EXHAUSTED, "", None
 
@@ -87,7 +103,7 @@ def run_agent(
         if time.monotonic() - start > limits.max_wall_seconds or t_in + t_out > limits.max_tokens:
             break
         try:
-            out = provider.next_turn(msgs)
+            out = provider.next_turn(compact_history(msgs, limits.context_keep_last))
         except DailyQuotaExhausted:
             raise  # not the agent's fault: the experiment runner pauses and resumes later
         except Exception as exc:  # noqa: BLE001 - provider failures end the run as `error`
