@@ -1,5 +1,4 @@
 # USD per million tokens. The plan runs on the free tier, so cost is $0 and prices stay null.
-# If you ever enable billing, copy prices from the provider's pricing page that day. Never guess.
 pricing:
-  SET_GEMMA_4_31B_ID_FROM_AI_STUDIO: {input: null, output: null}
-  SET_GEMINI_3_1_FLASH_LITE_ID_FROM_AI_STUDIO: {input: null, output: null}
+  SET_GEMMA_4_31B_ID: {input: null, output: null}
+  SET_GEMINI_3_1_FLASH_LITE_ID: {input: null, output: null}

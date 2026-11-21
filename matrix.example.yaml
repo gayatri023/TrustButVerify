@@ -1,5 +1,5 @@
 # Example matrix for `tbv experiment --matrix matrix.example.yaml --dry-run`
-agents: [gemma-4-31b] # names from config/agents.yaml
-split: dev # dev | test | all  (test needs --final and is evaluated once)
+agents: [gemma-4-31b]     # names from config/agents.yaml
+split: dev                # dev | test | all  (test needs --final and is evaluated once)
 repeats: 1
 retry_steps: 10

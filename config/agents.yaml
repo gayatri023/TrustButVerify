@@ -4,26 +4,26 @@
 agents:
   - name: gemma-4-31b
     provider: gemini
-    model: SET_GEMMA_4_31B_ID # from `tbv models`
+    model: SET_GEMMA_4_31B_ID           # from `tbv models`
     temperature: 0.0
     max_steps: 20
     max_wall_seconds: 900
     max_tokens: 200000
     rpm: 30
-    tpm: 16000 # the binding limit: about 3-5 agent steps per minute
+    tpm: 16000                          # the binding limit: about 3-5 agent steps per minute
     rpd: 14400
-    context_keep_last: 6 # keep the request under the 16K tokens-per-minute budget
+    context_keep_last: 6                # keep the request under the 16K tokens-per-minute budget
     max_tool_chars: 3000
-    retry: { max_retries: 5, backoff_seconds: 4.0 }
+    retry: {max_retries: 5, backoff_seconds: 4.0}
   - name: gemini-3-1-flash-lite
     provider: gemini
-    model: SET_GEMINI_3_1_FLASH_LITE_ID # from `tbv models`
+    model: SET_GEMINI_3_1_FLASH_LITE_ID  # from `tbv models`
     temperature: 0.0
     max_steps: 20
     max_wall_seconds: 900
     max_tokens: 200000
     rpm: 15
     tpm: 250000
-    rpd: 500 # the binding limit: about 30 runs per day
+    rpd: 500                            # the binding limit: about 30 runs per day
     max_tool_chars: 8000
-    retry: { max_retries: 5, backoff_seconds: 4.0 }
+    retry: {max_retries: 5, backoff_seconds: 4.0}
