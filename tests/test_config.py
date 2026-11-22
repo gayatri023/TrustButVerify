@@ -9,8 +9,9 @@ def test_shipped_configs_load() -> None:
     assert load_pricing().pricing
 
 
-def test_placeholder_models_are_flagged_as_unconfigured() -> None:
-    assert all(not a.is_configured for a in load_agents().agents)
+def test_models_are_resolved_at_run_time_not_hardcoded() -> None:
+    assert all(a.model.startswith("AUTO:") for a in load_agents().agents)
+    assert all(a.is_configured for a in load_agents().agents)
 
 
 def test_shipped_agents_carry_the_free_tier_limits_read_from_ai_studio() -> None:

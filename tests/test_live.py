@@ -8,7 +8,15 @@ from tbv.core.config import Settings, load_agents, load_gate
 from tbv.core.models import Split
 from tbv.experiment.orchestrator import AgentSpec
 from tbv.experiment.store import Store
-from tbv.live import Matrix, dry_run, require_ready, run_experiment, select_tasks
+from tbv.live import (
+    Matrix,
+    dry_run,
+    make_spec,
+    require_ready,
+    resolve_model_id,
+    run_experiment,
+    select_tasks,
+)
 from tbv.sandbox.local_executor import LocalExecutor
 from tbv.scenarios import SCENARIOS
 from tbv.suite.task import load_tasks
@@ -18,8 +26,40 @@ GATE = load_gate()
 
 def test_unconfigured_agents_are_refused_with_a_helpful_message() -> None:
     g = next(a for a in load_agents().agents if a.name == "gemma-4-31b")
-    with pytest.raises(RuntimeError, match="tbv models"):
-        require_ready(g, Settings(gemini_api_key="k"))
+    with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
+        require_ready(g, Settings())
+    with pytest.raises(RuntimeError, match="model id"):
+        require_ready(g.model_copy(update={"model": "SET_ME"}), Settings(gemini_api_key="k"))
+
+
+def test_model_ids_are_resolved_from_a_pattern() -> None:
+    ids = [
+        "gemma-4-31b-it",
+        "gemma-4-26b-it",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-flash-lite-image",
+        "gemini-3.5-flash-lite",
+    ]
+    assert resolve_model_id("gemma-4-31b", ids) == "gemma-4-31b-it"
+    assert resolve_model_id("gemini-3.1-flash-lite", ids) == "gemini-3.1-flash-lite"
+    assert (
+        resolve_model_id("gemini-3.1-flash-lite", [i for i in ids if i != "gemini-3.1-flash-lite"])
+        == "gemini-3.1-flash-lite-preview"
+    )
+    with pytest.raises(RuntimeError, match="similar ids"):
+        resolve_model_id("gemma-9-1b", ids)
+
+
+def test_make_spec_resolves_auto_models(tmp_path: Path) -> None:
+    cfg = next(a for a in load_agents().agents if a.name == "gemma-4-31b")
+    spec = make_spec(
+        cfg,
+        Settings(gemini_api_key="k"),
+        Store(":memory:"),
+        list_models=lambda key: ["gemma-4-31b-it", "other"],
+    )
+    assert spec.model == "gemma-4-31b-it" and spec.config_hash
 
 
 def _specs(names: list[str]) -> list[AgentSpec]:

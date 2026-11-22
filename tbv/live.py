@@ -54,8 +54,44 @@ def require_ready(cfg: AgentConfig, settings: Settings) -> None:
         raise RuntimeError("GEMINI_API_KEY is not set (Codespaces secret or .env)")
 
 
-def make_spec(cfg: AgentConfig, settings: Settings, store: Store) -> AgentSpec:
+AUTO_PREFIX = "AUTO:"
+_BANNED = ("image", "tts", "live", "audio", "embedding", "transcribe", "robotics")
+
+
+def resolve_model_id(pattern: str, available: list[str]) -> str:
+    """Pick an id containing `pattern`: non-preview first, then shortest, then alphabetical."""
+    cands = [m for m in available if pattern in m and not any(b in m for b in _BANNED)]
+    if not cands:
+        near = [m for m in available if pattern.split("-")[0] in m][:8]
+        raise RuntimeError(f"no model id contains {pattern!r}; similar ids: {near}")
+    return sorted(cands, key=lambda m: ("preview" in m or "exp" in m, len(m), m))[0]
+
+
+def fetch_model_ids(api_key: str) -> list[str]:
+    from google import genai
+
+    out = []
+    for m in genai.Client(api_key=api_key).models.list():
+        if "generateContent" in (m.supported_actions or []):
+            out.append((m.name or "").removeprefix("models/"))
+    return out
+
+
+def make_spec(
+    cfg: AgentConfig,
+    settings: Settings,
+    store: Store,
+    list_models: Callable[[str], list[str]] = fetch_model_ids,
+) -> AgentSpec:
     require_ready(cfg, settings)
+    if cfg.model.startswith(AUTO_PREFIX):
+        cfg = cfg.model_copy(
+            update={
+                "model": resolve_model_id(
+                    cfg.model.removeprefix(AUTO_PREFIX), list_models(settings.gemini_api_key or "")
+                )
+            }
+        )
     day = _pacific_day(dt.datetime.now(dt.UTC).timestamp())
     limiter = QuotaLimiter(
         cfg.rpm or 1,

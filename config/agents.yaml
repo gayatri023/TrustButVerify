@@ -1,10 +1,11 @@
 # Agent configurations (free-tier plan, see docs/DECISIONS.md D-011, D-017).
-# `model` is still a placeholder: run `uv run tbv models` in the Codespace, copy the exact id.
+# `model: AUTO:<text>` means: pick the API model id containing <text> when the run starts (non-preview
+# first, shortest first), print it, and store it in results.sqlite. `tbv models` lists all ids.
 # rpm / tpm / rpd below were read from the AI Studio rate-limit page on 20 Nov 2026 (free tier).
 agents:
   - name: gemma-4-31b
     provider: gemini
-    model: SET_GEMMA_4_31B_ID           # from `tbv models`
+    model: AUTO:gemma-4-31b             # resolved to the exact id at run time and recorded
     temperature: 0.0
     max_steps: 20
     max_wall_seconds: 900
@@ -17,7 +18,7 @@ agents:
     retry: {max_retries: 5, backoff_seconds: 4.0}
   - name: gemini-3-1-flash-lite
     provider: gemini
-    model: SET_GEMINI_3_1_FLASH_LITE_ID  # from `tbv models`
+    model: AUTO:gemini-3.1-flash-lite   # resolved to the exact id at run time and recorded
     temperature: 0.0
     max_steps: 20
     max_wall_seconds: 900

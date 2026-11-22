@@ -38,6 +38,7 @@ class AgentConfig(_Strict):
     tpm: int | None = None  # free-tier input tokens per minute
     context_keep_last: int | None = None  # keep full tool output only for the last N messages
     max_tool_chars: int = 8000  # clip each tool output shown to the model
+    tool_mode: Literal["native", "text", "auto"] = "auto"  # auto: native, fall back to JSON-in-text
     retry: RetryPolicy
 
     @property
