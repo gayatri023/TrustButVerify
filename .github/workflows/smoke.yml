@@ -1,0 +1,31 @@
+name: smoke
+# Manual: Actions > smoke > Run workflow. One short real run per agent (a handful of API requests).
+# Use it BEFORE the full experiment: it shows quickly whether the Gemini adapter and Docker work together.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: make setup
+      - run: uv run tbv sandbox build
+      - run: uv run tbv suite expand
+      - name: Smoke run, primary agent
+        run: uv run tbv run --agent gemma-4-31b --task bug-001 --db data/smoke.sqlite
+      - name: Smoke run, second agent
+        run: uv run tbv run --agent gemini-3-1-flash-lite --task bug-001 --db data/smoke.sqlite
+      - name: Show the transcripts (for debugging)
+        if: always()
+        run: |
+          for f in $(find data/work -name 'transcript.attempt1.jsonl' 2>/dev/null); do
+            echo "=== $f"; tail -n 6 "$f" | cut -c1-600
+          done

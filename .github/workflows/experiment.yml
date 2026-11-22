@@ -1,0 +1,61 @@
+name: experiment
+# Manual: Actions > experiment > Run workflow. Runs the pre-registered experiment on GitHub's machines.
+# Resumable: results.sqlite is cached between runs, finished cells are skipped, and a quota pause or a
+# timeout just means "run it again". Needs: repository secret GEMINI_API_KEY, docs/PREREG.md FROZEN,
+# and suite/splits.yaml committed.
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: dev, test (TEST is evaluated once, with --final) or all
+        type: choice
+        options: [all, dev, test]
+        default: all
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: make setup
+      - run: uv run tbv sandbox build
+      - run: uv run tbv suite expand
+      - name: Restore earlier results
+        uses: actions/cache/restore@v4
+        with:
+          path: data/results.sqlite
+          key: results-${{ github.run_id }}
+          restore-keys: results-
+      - name: DEV phase
+        if: inputs.phase == 'dev' || inputs.phase == 'all'
+        run: uv run tbv experiment --matrix matrix.dev.yaml
+      - name: TEST phase (once, frozen config)
+        if: inputs.phase == 'test' || inputs.phase == 'all'
+        run: uv run tbv experiment --matrix matrix.test.yaml --final
+      - name: Save results for the next run
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/results.sqlite
+          key: results-${{ github.run_id }}
+      - name: Build the results page and the memo
+        if: always()
+        run: |
+          uv run tbv analyze --out-dir results
+          uv run tbv memo --out-dir results
+      - name: Upload everything
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbv-results
+          path: |
+            data/results.sqlite
+            results/
+            data/work/**/transcript.attempt*.jsonl

@@ -1,0 +1,5 @@
+# TEST phase: both agents on the TEST split. Run once, with --final.
+agents: [gemma-4-31b, gemini-3-1-flash-lite]
+split: test
+repeats: 1
+retry_steps: 10

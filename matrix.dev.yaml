@@ -1,0 +1,5 @@
+# DEV phase: the primary agent on the DEV split.
+agents: [gemma-4-31b]
+split: dev
+repeats: 1
+retry_steps: 10
