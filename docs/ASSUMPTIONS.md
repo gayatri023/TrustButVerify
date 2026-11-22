@@ -18,8 +18,7 @@ A-007 Not verified in the authoring environment (no Docker, no network, no API k
 A-008 Verified here with scripted fake agents on a test-only executor: task validation, pristine scoring,
 all six verifiers, claim extraction, verdict logic, reports, retry, resumable experiment runner,
 TEST-split guard, metrics and the HTML report (96 tests).
-A-009 16 validated tasks exist (suite/specs). The target is 30 to 40; difficulty is uncalibrated and no
-human has reviewed any task yet.
+A-009 30 validated tasks exist (suite/specs); difficulty is uncalibrated and no human has reviewed any task yet.
 A-012 Throughput on Gemma 4 31B is limited by 16K input tokens/minute. If a step averages 4-5K tokens, that is
 about 3-4 steps a minute, so roughly 1,350 steps (60 tasks with retries) take on the order of 6 hours.
 This is an estimate; `tbv experiment --dry-run` replaces it with a measured projection.

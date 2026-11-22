@@ -139,3 +139,24 @@ happens on DEV only.
 ## D-021 Tasks must run individually on the seed
 A task whose hidden tests fail at import (collection error) is rejected by the validator, because it gives
 no per-test evidence. Hidden tests import modules and call attributes inside test functions.
+
+## D-022 Model ids are resolved at run time; the adapter tolerates API differences
+Context: model ids could not be copied by hand in time, and Gemma models have historically rejected a
+system instruction or function calling on this API.
+Choice: `model: AUTO:<text>` in config picks the id containing the text (non-preview first, then shortest),
+prints it and stores it in results.sqlite. The Gemini adapter inlines the system prompt if the API rejects
+a system instruction, and falls back to a JSON-in-text tool protocol if it rejects function calling
+(unit-tested with a fake client). Cost: the pinned id is known only at run time (it is recorded with every
+run); fallbacks are untested against the real API.
+
+## D-023 The experiment runs as a GitHub Actions workflow
+Choice: `experiment.yml` builds the sandbox, expands the tasks, runs the DEV phase then the TEST phase
+(with --final), caches results.sqlite between runs, and uploads the results page, memo, database and
+transcripts as an artifact. `smoke.yml` runs one task per agent first, to catch adapter or Docker problems
+in minutes. Free-plan runner minutes are the budget; the job limit is 350 minutes and a timeout or quota
+pause just means "run it again".
+
+## D-024 The decision memo is generated, not written
+`tbv memo` applies the PREREG decision rules (H2 below 50% leads with residual failures; H3 at most 5%
+with the "cannot rule out" caveat) to results.sqlite and emits resume bullets only from measured numbers.
+A frozen PREREG records the gate config hash and a CI test fails if config/gate.yaml changes afterwards.

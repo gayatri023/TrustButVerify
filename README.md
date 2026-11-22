@@ -27,7 +27,7 @@ results page. Everything it produces is stamped SYNTHETIC: it demonstrates the i
 
 ## Status (honest)
 
-Code complete and tested with scripted agents (113 tests run offline; 23 more run only with Docker): task format and validator, pristine scoring,
+Code complete and tested with scripted agents (about 150 tests run offline; 23 more run only with Docker): task format and validator, pristine scoring,
 sandbox executor interface, agent loop and transcripts, claim extraction, six verifiers, verdict logic,
 reports, retry loop, resumable experiment runner with the TEST-split guard, metrics, HTML page.
 
@@ -36,7 +36,7 @@ projection) is written and its orchestration is tested with fakes. CI is green o
 Written but NOT yet run against the real thing: the Docker executor and its security tests, the
 Gemini adapter, the devcontainer. Run `make docker-tests` in your Codespace first.
 
-Not done: the full suite (16 validated tasks exist; target 30 to 40),
+Not done: human review of the 30 tasks,
 difficulty calibration, manual task review, real experiment results, red-team report, claim-labeling
 tool, developer study. There are NO results yet; do not quote any number from this repo.
 
@@ -58,6 +58,7 @@ No make? `uv sync --all-extras`, `uv run pytest -q`, `uv run ruff check .`, `uv 
   tbv sandbox build                build the sandbox image
   tbv verify --transcript T --workspace W --task-dir D     run the gate
   tbv analyze                      rebuild the results page from results.sqlite
+  tbv memo                         decision memo with the pre-registered rules applied
   tbv models                       list model ids your API key can call
   tbv run --agent A --task T       one live run (needs Docker, a key, model ids in config)
   tbv experiment --matrix M [--dry-run] [--final]   resumable experiment; dry run projects the cost
