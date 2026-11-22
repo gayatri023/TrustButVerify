@@ -39,7 +39,7 @@ class Store:
             Path(path).parent.mkdir(parents=True, exist_ok=True)
         self.con = sqlite3.connect(str(path))
         self.con.row_factory = sqlite3.Row
-        self.con.execute("PRAGMA journal_mode=WAL")
+        self.con.execute("PRAGMA journal_mode=DELETE")
         self.con.executescript(SCHEMA)
 
     @contextmanager
