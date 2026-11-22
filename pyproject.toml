@@ -45,6 +45,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 "tests/**" = ["E501"]
 "tbv/scenarios.py" = ["E501"]
 "tbv/analysis/report_html.py" = ["E501"]
+"tbv/analysis/memo.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

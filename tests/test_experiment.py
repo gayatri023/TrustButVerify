@@ -124,6 +124,8 @@ def test_demo_end_to_end(tmp_path: Path) -> None:
     html = run_demo(tmp_path / "demo", Console(quiet=True)).read_text(encoding="utf-8")
     assert "SYNTHETIC FIXTURE DATA" in html and "False-completion rate" in html
     assert (tmp_path / "demo" / "reports" / "echo_fake.attempt2.md").exists()
+    memo = (tmp_path / "demo" / "memo.html").read_text(encoding="utf-8")
+    assert "SYNTHETIC FIXTURE DATA" in memo and "Recommendation" in memo and "Limitations" in memo
 
 
 def test_repeat_index_creates_distinct_rows(tasks: dict[str, Task], tmp_path: Path) -> None:
@@ -134,3 +136,11 @@ def test_repeat_index_creates_distinct_rows(tasks: dict[str, Task], tmp_path: Pa
     assert s.ran == 1
     reps = [r["repeat"] for r in store.con.execute("SELECT repeat FROM runs WHERE attempt=1")]
     assert sorted(reps) == [0, 1]
+
+
+def test_split_is_stratified_when_possible(example_tasks: Path) -> None:
+    lst = load_tasks(example_tasks)
+    types = {t.spec.type for t in lst}
+    sp = make_splits(lst, len(types))
+    test_types = {t.spec.type for t in lst if t.spec.id in sp["test"]}
+    assert test_types == types and len(sp["test"]) == len(types)  # one task of every type

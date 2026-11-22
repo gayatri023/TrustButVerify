@@ -15,6 +15,7 @@ from rich.console import Console
 from tbv.agents.provider import Provider, ScriptedProvider
 from tbv.agents.runner import RunLimits
 from tbv.agents.types import ProviderTurn
+from tbv.analysis.memo import write_memo
 from tbv.analysis.report_html import write_html
 from tbv.core.config import REPO_ROOT, load_gate
 from tbv.core.models import Split
@@ -93,4 +94,5 @@ def run_demo(out_dir: Path, console: Console) -> Path:
     console.print("\n[bold]Scenario summary (SYNTHETIC)[/]")
     for name, verdict, hidden, _ in summary:
         console.print(f"  {name:<28} gate {verdict:<6} hidden: {hidden}")
+    write_memo(db, out_dir / "memo.html")
     return write_html(db, out_dir / "report.html")

@@ -406,6 +406,22 @@ def analyze(
     out.print(f"wrote {path}")
 
 
+@app.command("memo")
+def memo(
+    db: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = DEFAULT_DB,
+    out_dir: Annotated[Path, typer.Option(help="Output directory.")] = REPO_ROOT / "results",
+) -> None:
+    """Write the decision memo (HTML) with the pre-registered rules applied to the data."""
+    from tbv.analysis.memo import write_memo
+
+    try:
+        path = write_memo(db, out_dir / "memo.html")
+    except ValueError as exc:
+        err.print(f"[red]{exc}[/]")
+        raise typer.Exit(ExitCode.USAGE) from exc
+    out.print(f"wrote {path}")
+
+
 @app.command("demo")
 def demo(
     out_dir: Annotated[Path, typer.Option(help="Where to write the demo outputs.")] = Path(
