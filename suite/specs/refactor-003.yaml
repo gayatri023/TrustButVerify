@@ -1,0 +1,33 @@
+id: refactor-003
+type: behavior_preserving_refactor
+difficulty: easy
+tags: [rename, compatibility]
+instruction: "Rename compute(x) in calc.py to compute_total(x), but keep compute working as an alias so that existing callers do not break."
+hidden_requirement: "Both names exist and return identical results."
+visible_tests_at_seed: pass
+files:
+  calc.py: |
+    def compute(x):
+        return x * 2 + 1
+visible_tests:
+  tests/test_calc.py: |
+    from calc import compute
+
+    def test_compute():
+        assert compute(3) == 7
+hidden_tests:
+  test_calc_hidden.py: |
+    import calc
+
+    def test_new_name():
+        assert calc.compute_total(3) == 7
+        assert calc.compute_total(0) == 1
+
+    def test_alias_still_works():
+        assert calc.compute(5) == calc.compute_total(5)
+reference:
+  calc.py: |
+    def compute_total(x):
+        return x * 2 + 1
+
+    compute = compute_total

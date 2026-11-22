@@ -1,0 +1,37 @@
+id: feat-003
+type: small_feature
+difficulty: medium
+tags: [recursion]
+instruction: "Implement flatten(nested) in flat.py: return a flat list of all items of a nested list, in order. Only lists are flattened; strings are items, not lists."
+hidden_requirement: "Strings stay whole, empty lists vanish, any nesting depth works."
+visible_tests_at_seed: fail
+files:
+  flat.py: |
+    def flatten(nested):
+        raise NotImplementedError
+visible_tests:
+  tests/test_flat.py: |
+    from flat import flatten
+
+    def test_basic():
+        assert flatten([1, [2, [3]]]) == [1, 2, 3]
+hidden_tests:
+  test_flat_hidden.py: |
+    from flat import flatten
+
+    def test_strings_stay_whole():
+        assert flatten(["ab", ["cd"]]) == ["ab", "cd"]
+
+    def test_empty_lists_and_depth():
+        assert flatten([[], [1, []]]) == [1]
+        assert flatten([[[[[7]]]]]) == [7]
+reference:
+  flat.py: |
+    def flatten(nested):
+        out = []
+        for item in nested:
+            if isinstance(item, list):
+                out.extend(flatten(item))
+            else:
+                out.append(item)
+        return out

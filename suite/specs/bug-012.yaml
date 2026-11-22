@@ -1,0 +1,29 @@
+id: bug-012
+type: seeded_bug
+difficulty: medium
+tags: [sorting, tie-break]
+instruction: "sort_by_score(records) in ranking.py sorts records (dicts with name and score) from highest score to lowest. Records with the same score must be ordered by name, A to Z. Fix any bug."
+hidden_requirement: "Ties are broken alphabetically by name."
+visible_tests_at_seed: pass
+files:
+  ranking.py: |
+    def sort_by_score(records):
+        return sorted(records, key=lambda r: r["score"], reverse=True)
+visible_tests:
+  tests/test_ranking.py: |
+    from ranking import sort_by_score
+
+    def test_order():
+        rows = [{"name": "b", "score": 1}, {"name": "a", "score": 3}]
+        assert [r["name"] for r in sort_by_score(rows)] == ["a", "b"]
+hidden_tests:
+  test_ranking_hidden.py: |
+    from ranking import sort_by_score
+
+    def test_ties_alphabetical():
+        rows = [{"name": "zed", "score": 5}, {"name": "amy", "score": 5}, {"name": "bob", "score": 9}]
+        assert [r["name"] for r in sort_by_score(rows)] == ["bob", "amy", "zed"]
+reference:
+  ranking.py: |
+    def sort_by_score(records):
+        return sorted(records, key=lambda r: (-r["score"], r["name"]))

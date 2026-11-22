@@ -1,0 +1,35 @@
+id: bug-010
+type: seeded_bug
+difficulty: medium
+tags: [mutation, aliasing]
+instruction: "merge(defaults, overrides) in dicts.py should return a new dict with the overrides applied. Neither input may be modified. Fix any bug."
+hidden_requirement: "The defaults argument must not be mutated."
+visible_tests_at_seed: pass
+files:
+  dicts.py: |
+    def merge(defaults, overrides):
+        defaults.update(overrides)
+        return defaults
+visible_tests:
+  tests/test_dicts.py: |
+    from dicts import merge
+
+    def test_merge_result():
+        assert merge({"a": 1, "b": 2}, {"b": 3}) == {"a": 1, "b": 3}
+hidden_tests:
+  test_dicts_hidden.py: |
+    from dicts import merge
+
+    def test_inputs_unchanged():
+        d, o = {"a": 1}, {"a": 2}
+        merge(d, o)
+        assert d == {"a": 1} and o == {"a": 2}
+
+    def test_empty():
+        assert merge({}, {}) == {}
+reference:
+  dicts.py: |
+    def merge(defaults, overrides):
+        result = dict(defaults)
+        result.update(overrides)
+        return result

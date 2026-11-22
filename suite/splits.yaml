@@ -1,4 +1,33 @@
-# Frozen in Prompt 3. TEST is never used for gate tuning.
-frozen: false
-dev: []
-test: []
+frozen: true
+dev:
+- bug-001
+- bug-003
+- bug-004
+- bug-005
+- bug-006
+- bug-007
+- bug-009
+- bug-010
+- bug-011
+- cfg-002
+- cfg-003
+- feat-002
+- feat-003
+- feat-004
+- feat-005
+- feat-006
+- refactor-001
+- refactor-003
+- short-002
+- under-001
+- under-003
+- under-004
+test:
+- bug-002
+- bug-008
+- bug-012
+- cfg-001
+- feat-001
+- refactor-002
+- short-001
+- under-002

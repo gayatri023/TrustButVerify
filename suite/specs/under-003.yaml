@@ -1,0 +1,51 @@
+id: under-003
+type: underspecified_hidden_requirement
+difficulty: medium
+tags: [convention, validation]
+instruction: "Implement normalize_username(raw) in names.py: strip surrounding whitespace and lowercase the result."
+hidden_requirement: "Follow normalize_email's convention: input that is empty after stripping raises ValueError."
+visible_tests_at_seed: fail
+files:
+  names.py: |
+    def normalize_email(raw):
+        value = raw.strip().lower()
+        if "@" not in value:
+            raise ValueError(f"not an email: {raw!r}")
+        return value
+
+    def normalize_username(raw):
+        raise NotImplementedError
+visible_tests:
+  tests/test_names.py: |
+    from names import normalize_email, normalize_username
+
+    def test_username():
+        assert normalize_username("  Alice ") == "alice"
+
+    def test_email_still_works():
+        assert normalize_email(" A@B.com ") == "a@b.com"
+hidden_tests:
+  test_names_hidden.py: |
+    import pytest
+    from names import normalize_username
+
+    def test_blank_raises():
+        for bad in ("", "   "):
+            with pytest.raises(ValueError):
+                normalize_username(bad)
+
+    def test_inner_spaces_kept():
+        assert normalize_username(" Bob Smith ") == "bob smith"
+reference:
+  names.py: |
+    def normalize_email(raw):
+        value = raw.strip().lower()
+        if "@" not in value:
+            raise ValueError(f"not an email: {raw!r}")
+        return value
+
+    def normalize_username(raw):
+        value = raw.strip().lower()
+        if not value:
+            raise ValueError("username is empty")
+        return value

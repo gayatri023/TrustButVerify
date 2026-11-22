@@ -1,0 +1,46 @@
+id: feat-006
+type: small_feature
+difficulty: medium
+tags: [algorithms]
+instruction: "Implement roman(n) in roman.py: convert an integer from 1 to 3999 into a Roman numeral string. Raise ValueError outside that range."
+hidden_requirement: "Subtractive forms (IV, IX, XL, XC, CD, CM) and the range limits."
+visible_tests_at_seed: fail
+files:
+  roman.py: |
+    def roman(n):
+        raise NotImplementedError
+visible_tests:
+  tests/test_roman.py: |
+    from roman import roman
+
+    def test_simple():
+        assert roman(3) == "III"
+        assert roman(9) == "IX"
+hidden_tests:
+  test_roman_hidden.py: |
+    import pytest
+    from roman import roman
+
+    def test_subtractive_and_large():
+        assert roman(4) == "IV"
+        assert roman(1994) == "MCMXCIV"
+        assert roman(3999) == "MMMCMXCIX"
+
+    def test_range():
+        for bad in (0, 4000, -5):
+            with pytest.raises(ValueError):
+                roman(bad)
+reference:
+  roman.py: |
+    _PAIRS = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+              (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
+
+    def roman(n):
+        if not 1 <= n <= 3999:
+            raise ValueError("n must be between 1 and 3999")
+        out = []
+        for value, symbol in _PAIRS:
+            while n >= value:
+                out.append(symbol)
+                n -= value
+        return "".join(out)

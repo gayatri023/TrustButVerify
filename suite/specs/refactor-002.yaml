@@ -1,0 +1,66 @@
+id: refactor-002
+type: behavior_preserving_refactor
+difficulty: medium
+tags: [duplication, validation]
+instruction: "users.py validates a name and an age in two places. Extract the checks into a function validate_user(name, age) that raises the same ValueErrors, and use it in create_user and update_user without changing their behaviour."
+hidden_requirement: "validate_user exists with the same errors; both public functions behave as before."
+visible_tests_at_seed: pass
+files:
+  users.py: |
+    def create_user(name, age):
+        if not name or not name.strip():
+            raise ValueError("name required")
+        if age < 0:
+            raise ValueError("age must be non-negative")
+        return {"name": name.strip(), "age": age}
+
+    def update_user(user, name, age):
+        if not name or not name.strip():
+            raise ValueError("name required")
+        if age < 0:
+            raise ValueError("age must be non-negative")
+        user.update(name=name.strip(), age=age)
+        return user
+visible_tests:
+  tests/test_users.py: |
+    import pytest
+    from users import create_user, update_user
+
+    def test_create():
+        assert create_user("  Ann ", 5) == {"name": "Ann", "age": 5}
+
+    def test_update_and_errors():
+        assert update_user({}, "Bo", 7) == {"name": "Bo", "age": 7}
+        with pytest.raises(ValueError):
+            create_user("", 5)
+hidden_tests:
+  test_users_hidden.py: |
+    import pytest
+    import users
+
+    def test_validate_user():
+        users.validate_user("a", 1)
+        with pytest.raises(ValueError, match="name required"):
+            users.validate_user(" ", 1)
+        with pytest.raises(ValueError, match="age must be non-negative"):
+            users.validate_user("a", -1)
+
+    def test_update_uses_same_rules():
+        with pytest.raises(ValueError, match="age must be non-negative"):
+            users.update_user({}, "a", -3)
+reference:
+  users.py: |
+    def validate_user(name, age):
+        if not name or not name.strip():
+            raise ValueError("name required")
+        if age < 0:
+            raise ValueError("age must be non-negative")
+
+    def create_user(name, age):
+        validate_user(name, age)
+        return {"name": name.strip(), "age": age}
+
+    def update_user(user, name, age):
+        validate_user(name, age)
+        user.update(name=name.strip(), age=age)
+        return user

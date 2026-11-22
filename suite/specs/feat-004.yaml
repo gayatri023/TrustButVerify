@@ -1,0 +1,44 @@
+id: feat-004
+type: small_feature
+difficulty: medium
+tags: [parsing]
+instruction: "Implement parse_duration(text) in durations.py: convert strings such as '90s', '2m', '1h30m' (hours, minutes, seconds in that order, each optional) into a number of seconds. Raise ValueError for text that is not a valid duration."
+hidden_requirement: "Combined units, and ValueError for empty or invalid text."
+visible_tests_at_seed: fail
+files:
+  durations.py: |
+    def parse_duration(text):
+        raise NotImplementedError
+visible_tests:
+  tests/test_durations.py: |
+    from durations import parse_duration
+
+    def test_simple():
+        assert parse_duration("90s") == 90
+        assert parse_duration("2m") == 120
+hidden_tests:
+  test_durations_hidden.py: |
+    import pytest
+    from durations import parse_duration
+
+    def test_combined():
+        assert parse_duration("1h30m") == 5400
+        assert parse_duration("45m30s") == 2730
+
+    def test_invalid():
+        for bad in ("abc", "", "5x"):
+            with pytest.raises(ValueError):
+                parse_duration(bad)
+reference:
+  durations.py: |
+    import re
+
+    _PATTERN = re.compile(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?")
+
+    def parse_duration(text):
+        text = text.strip()
+        m = _PATTERN.fullmatch(text)
+        if not text or not m:
+            raise ValueError(f"invalid duration: {text!r}")
+        h, mi, s = (int(g) if g else 0 for g in m.groups())
+        return h * 3600 + mi * 60 + s

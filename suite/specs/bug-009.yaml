@@ -1,0 +1,32 @@
+id: bug-009
+type: seeded_bug
+difficulty: medium
+tags: [rounding]
+instruction: "round_half_up(x) in rounding.py should round to the nearest integer, with exact halves rounding up (2.5 becomes 3). Fix any bug."
+hidden_requirement: "Exact halves round up, not to the nearest even number."
+visible_tests_at_seed: pass
+files:
+  rounding.py: |
+    def round_half_up(x):
+        return round(x)
+visible_tests:
+  tests/test_rounding.py: |
+    from rounding import round_half_up
+
+    def test_clear_cases():
+        assert round_half_up(2.4) == 2
+        assert round_half_up(2.6) == 3
+hidden_tests:
+  test_rounding_hidden.py: |
+    from rounding import round_half_up
+
+    def test_halves():
+        assert round_half_up(2.5) == 3
+        assert round_half_up(3.5) == 4
+        assert round_half_up(0.5) == 1
+reference:
+  rounding.py: |
+    import math
+
+    def round_half_up(x):
+        return int(math.floor(x + 0.5))

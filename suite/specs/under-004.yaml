@@ -1,0 +1,52 @@
+id: under-004
+type: underspecified_hidden_requirement
+difficulty: medium
+tags: [convention, errors]
+instruction: "Implement safe_divide(a, b) in mathx.py: it returns a divided by b."
+hidden_requirement: "Follow the safe_* convention in the module: never raise, return None for invalid input (division by zero)."
+visible_tests_at_seed: fail
+files:
+  mathx.py: |
+    import math
+
+    def safe_sqrt(x):
+        """Square root, or None when x is negative (never raises)."""
+        if x < 0:
+            return None
+        return math.sqrt(x)
+
+    def safe_divide(a, b):
+        raise NotImplementedError
+visible_tests:
+  tests/test_mathx.py: |
+    from mathx import safe_divide, safe_sqrt
+
+    def test_divide():
+        assert safe_divide(6, 3) == 2
+
+    def test_sqrt():
+        assert safe_sqrt(9) == 3 and safe_sqrt(-1) is None
+hidden_tests:
+  test_mathx_hidden.py: |
+    from mathx import safe_divide
+
+    def test_zero_divisor_returns_none():
+        assert safe_divide(1, 0) is None
+
+    def test_negative_and_float():
+        assert safe_divide(-6, 3) == -2
+        assert safe_divide(1, 4) == 0.25
+reference:
+  mathx.py: |
+    import math
+
+    def safe_sqrt(x):
+        """Square root, or None when x is negative (never raises)."""
+        if x < 0:
+            return None
+        return math.sqrt(x)
+
+    def safe_divide(a, b):
+        if b == 0:
+            return None
+        return a / b

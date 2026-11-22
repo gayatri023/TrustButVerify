@@ -1,0 +1,40 @@
+id: cfg-002
+type: file_or_config_task
+difficulty: easy
+tags: [json, defaults]
+instruction: "Create defaults.json with timeout (30) and retries (2), and implement get_default(name, fallback=None) in defaults.py: return the value stored in the file, or fallback when the name is missing."
+hidden_requirement: "Fallback for unknown names, integer types preserved, and it works from any working directory."
+expected_files: [defaults.json]
+visible_tests_at_seed: fail
+files:
+  defaults.py: |
+    def get_default(name, fallback=None):
+        raise NotImplementedError
+visible_tests:
+  tests/test_defaults.py: |
+    from defaults import get_default
+
+    def test_known_name():
+        assert get_default("timeout") == 30
+hidden_tests:
+  test_defaults_hidden.py: |
+    from defaults import get_default
+
+    def test_other_value_and_fallback():
+        assert get_default("retries") == 2
+        assert get_default("missing") is None
+        assert get_default("missing", 5) == 5
+
+    def test_any_directory(tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert get_default("timeout") == 30
+reference:
+  defaults.json: |
+    {"timeout": 30, "retries": 2}
+  defaults.py: |
+    import json
+    from pathlib import Path
+
+    def get_default(name, fallback=None):
+        data = json.loads(Path(__file__).with_name("defaults.json").read_text())
+        return data.get(name, fallback)

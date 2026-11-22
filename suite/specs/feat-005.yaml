@@ -1,0 +1,75 @@
+id: feat-005
+type: small_feature
+difficulty: easy
+tags: [classes]
+instruction: "Implement the Stack class in stack.py with push(item), pop(), peek(), is_empty() and len(). Popping or peeking an empty stack raises IndexError."
+hidden_requirement: "IndexError on empty pop and peek; len and is_empty track the contents."
+visible_tests_at_seed: fail
+files:
+  stack.py: |
+    class Stack:
+        def push(self, item):
+            raise NotImplementedError
+
+        def pop(self):
+            raise NotImplementedError
+
+        def peek(self):
+            raise NotImplementedError
+
+        def is_empty(self):
+            raise NotImplementedError
+
+        def __len__(self):
+            raise NotImplementedError
+visible_tests:
+  tests/test_stack.py: |
+    from stack import Stack
+
+    def test_lifo():
+        s = Stack()
+        s.push(1)
+        s.push(2)
+        assert s.pop() == 2
+        assert s.pop() == 1
+hidden_tests:
+  test_stack_hidden.py: |
+    import pytest
+    from stack import Stack
+
+    def test_empty_errors():
+        s = Stack()
+        with pytest.raises(IndexError):
+            s.pop()
+        with pytest.raises(IndexError):
+            s.peek()
+
+    def test_len_and_empty():
+        s = Stack()
+        assert s.is_empty() and len(s) == 0
+        s.push("x")
+        assert not s.is_empty() and len(s) == 1 and s.peek() == "x"
+reference:
+  stack.py: |
+    class Stack:
+        def __init__(self):
+            self._items = []
+
+        def push(self, item):
+            self._items.append(item)
+
+        def pop(self):
+            if not self._items:
+                raise IndexError("pop from empty stack")
+            return self._items.pop()
+
+        def peek(self):
+            if not self._items:
+                raise IndexError("peek at empty stack")
+            return self._items[-1]
+
+        def is_empty(self):
+            return not self._items
+
+        def __len__(self):
+            return len(self._items)

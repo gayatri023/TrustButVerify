@@ -1,0 +1,39 @@
+id: cfg-003
+type: file_or_config_task
+difficulty: easy
+tags: [text-file, version]
+instruction: "Create version.txt containing 1.2.0 and implement get_version() in versioning.py: read the file and return the version as a tuple of ints, here (1, 2, 0)."
+hidden_requirement: "Tuple of ints (comparable), trailing newline tolerated, works from any working directory."
+expected_files: [version.txt]
+visible_tests_at_seed: fail
+files:
+  versioning.py: |
+    def get_version():
+        raise NotImplementedError
+visible_tests:
+  tests/test_versioning.py: |
+    from versioning import get_version
+
+    def test_version():
+        assert get_version() == (1, 2, 0)
+hidden_tests:
+  test_versioning_hidden.py: |
+    from versioning import get_version
+
+    def test_types_and_comparison():
+        v = get_version()
+        assert all(isinstance(x, int) for x in v)
+        assert v > (1, 1, 9)
+
+    def test_any_directory(tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert get_version() == (1, 2, 0)
+reference:
+  version.txt: |
+    1.2.0
+  versioning.py: |
+    from pathlib import Path
+
+    def get_version():
+        text = Path(__file__).with_name("version.txt").read_text().strip()
+        return tuple(int(part) for part in text.split("."))
