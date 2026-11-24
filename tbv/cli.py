@@ -380,11 +380,10 @@ def models(
     if not key:
         err.print("[red]GEMINI_API_KEY is not set (Codespaces secret or .env).[/]")
         raise typer.Exit(ExitCode.USAGE)
-    from google import genai
+    from tbv.live import fetch_model_ids
 
-    for m in genai.Client(api_key=key).models.list():
-        name = (m.name or "").removeprefix("models/")
-        if "generateContent" in (m.supported_actions or []) and contains.lower() in name.lower():
+    for name in fetch_model_ids(key):
+        if contains.lower() in name.lower():
             out.print(name)
 
 

@@ -70,10 +70,14 @@ def resolve_model_id(pattern: str, available: list[str]) -> str:
 def fetch_model_ids(api_key: str) -> list[str]:
     from google import genai
 
+    # Keep the client in a variable until the (lazy) listing is fully read: a temporary client is
+    # garbage collected and its HTTP connection closed, giving "client has been closed".
+    client = genai.Client(api_key=api_key)
     out = []
-    for m in genai.Client(api_key=api_key).models.list():
+    for m in client.models.list():
         if "generateContent" in (m.supported_actions or []):
             out.append((m.name or "").removeprefix("models/"))
+    client.close()
     return out
 
 

@@ -112,3 +112,45 @@ def test_dry_run_projects_from_a_sample(example_tasks: Path, tmp_path: Path) -> 
         sample=1,
     )
     assert p.requests > 0 and p.retry_fraction == 1.0 and p.days_at_rpd >= 1
+
+
+def test_model_listing_keeps_the_client_alive_while_iterating(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression: a temporary genai.Client was garbage collected mid-listing ("client has been closed").
+
+    The fake mirrors the real SDK: the lazy listing does NOT reference the Client object, so the
+    client is closed as soon as nothing else holds it."""
+    import types as pytypes
+
+    class FakeClient:
+        def __init__(self, api_key: str) -> None:
+            state = {"closed": False}
+            self._state = state
+
+            def list_models():  # type: ignore[no-untyped-def]
+                def gen():  # type: ignore[no-untyped-def]
+                    if state["closed"]:
+                        raise RuntimeError("Cannot send a request, as the client has been closed.")
+                    for name in ("models/gemma-4-31b-it", "models/embed-x"):
+                        yield pytypes.SimpleNamespace(
+                            name=name,
+                            supported_actions=["generateContent"] if "gemma" in name else ["embed"],
+                        )
+
+                return gen()
+
+            self.models = pytypes.SimpleNamespace(list=list_models)
+
+        def __del__(self) -> None:
+            self._state["closed"] = True
+
+        def close(self) -> None:
+            pass
+
+    import google.genai as genai_mod
+
+    from tbv.live import fetch_model_ids
+
+    monkeypatch.setattr(genai_mod, "Client", FakeClient)
+    assert fetch_model_ids("k") == ["gemma-4-31b-it"]
